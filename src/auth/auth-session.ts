@@ -37,6 +37,8 @@ export const authSession = {
     localStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(tokens.user));
+    // Set cookie for middleware server-side redirection
+    document.cookie = "hasSession=true; path=/; max-age=604800; SameSite=Lax";
   },
 
   clear(): void {
@@ -45,5 +47,7 @@ export const authSession = {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    // Remove cookie for middleware server-side redirection
+    document.cookie = "hasSession=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
   },
 };

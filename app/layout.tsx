@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import ThemeRegistry from '../src/components/providers/ThemeRegistry';
+import { AuthProvider } from '../src/components/providers/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'GoFunds — Mutual Fund Investment Planner',
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <ThemeRegistry>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </ThemeRegistry>
       </body>
     </html>

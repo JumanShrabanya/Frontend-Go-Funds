@@ -1,37 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Box, Button, Container, Typography, AppBar, Toolbar } from '@mui/material';
-import { useRouter } from 'next/navigation';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import { authApi } from '../../src/api/auth.api';
-import { authSession } from '../../src/auth/auth-session';
+
+import { useAuth } from '../../src/components/providers/AuthProvider';
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { logout } = useAuth();
 
-  useEffect(() => {
-    // Basic frontend protection
-    const token = authSession.getAccessToken();
-    if (!token) {
-      router.push('/auth/login');
-    } else {
-      setLoading(false);
-    }
-  }, [router]);
-
-  const handleLogout = async () => {
-    const refreshToken = authSession.getRefreshToken();
-    try {
-      if (refreshToken) await authApi.logout(refreshToken);
-    } finally {
-      authSession.clear();
-    }
-    router.push('/');
+  const handleLogout = () => {
+    logout();
   };
-
-  if (loading) return null;
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#F8FAFC' }}>
