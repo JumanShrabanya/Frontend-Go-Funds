@@ -12,6 +12,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '../../../src/api/auth.api';
+import { authSession } from '../../../src/auth/auth-session';
 
 // OTP Input component (6 separate boxes)
 function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -102,6 +103,8 @@ function VerifyOtpContent() {
     formState: { errors, isSubmitting },
   } = useForm<VerifyForm>({
     resolver: zodResolver(verifySchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
     defaultValues: { otp: '' },
   });
 
@@ -109,10 +112,10 @@ function VerifyOtpContent() {
     try {
       setError(null);
       const response = await authApi.verifyEmail({ email, otp: data.otp });
-      localStorage.setItem('accessToken', response.data.data.accessToken);
+      authSession.save(response.data.data);
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Invalid or expired OTP.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Invalid or expired OTP.');
     }
   };
 
@@ -122,8 +125,8 @@ function VerifyOtpContent() {
       await authApi.resendOtp({ email });
       setResendStatus({ type: 'success', message: 'A new code has been sent to your email.' });
       setCountdown(60);
-    } catch (err: any) {
-      setResendStatus({ type: 'error', message: err.message || 'Failed to resend code.' });
+    } catch (err: unknown) {
+      setResendStatus({ type: 'error', message: err instanceof Error ? err.message : 'Failed to resend code.' });
     }
   };
 

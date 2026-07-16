@@ -13,10 +13,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '../../../src/api/auth.api';
+import { authSession } from '../../../src/auth/auth-session';
+import { passwordPolicy } from '../../../src/auth/password-policy';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().trim().min(1, 'Email address is required').max(254, 'Email address must not exceed 254 characters').email('Please enter a valid email address'),
+  password: z.string().refine((value) => value.trim().length > 0, 'Password is required').max(passwordPolicy.maxLength, 'Password must not exceed 20 characters'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -29,22 +31,26 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = async (data: LoginForm) => {
     try {
       setError(null);
       const response = await authApi.login(data);
-      localStorage.setItem('accessToken', response.data.data.accessToken);
+      authSession.save(response.data.data);
       router.push('/dashboard');
-    } catch (err: any) {
-      if (err.message.includes('verify')) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to login';
+      if (message.toLowerCase().includes('verify')) {
         router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email)}`);
       } else {
-        setError(err.message || 'Failed to login');
+        setError(message);
       }
     }
   };
@@ -142,26 +148,35 @@ export default function LoginPage() {
                   <TextField
                     fullWidth
                     label="Email Address"
+                    type="email"
+                    required
+                    autoComplete="email"
                     {...register('email')}
                     error={!!errors.email}
                     helperText={errors.email?.message}
+                    slotProps={{ htmlInput: { maxLength: 254 } }}
                   />
 
                   <TextField
                     fullWidth
                     label="Password"
+                    required
+                    autoComplete="current-password"
                     type={showPassword ? 'text' : 'password'}
                     {...register('password')}
                     error={!!errors.password}
                     helperText={errors.password?.message}
-                    InputProps={{
+                    slotProps={{
+                      htmlInput: { maxLength: passwordPolicy.maxLength },
+                      input: {
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                          <IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'text.secondary' }}>
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
                       ),
+                      },
                     }}
                   />
 
@@ -175,7 +190,7 @@ export default function LoginPage() {
                     type="submit"
                     variant="contained"
                     size="large"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isValid}
                     sx={{ mt: 2, py: 1.8, fontSize: '1.05rem', borderRadius: 3 }}
                   >
                     {isSubmitting ? 'Signing in...' : 'Sign In'}

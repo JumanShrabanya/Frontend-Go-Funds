@@ -20,5 +20,15 @@ export const authApi = {
     api.post<ApiResponse<AuthTokens>>('/auth/verify-email', payload),
 
   resendOtp: (payload: ResendOtpPayload) =>
-    api.post<ApiResponse<MessageData>>('/auth/resend-otp', payload),
+    api.post<ApiResponse<MessageData>>('/auth/resend-verification-otp', payload),
+
+  refresh: (refreshToken: string) =>
+    api.post<ApiResponse<AuthTokens>>('/auth/refresh', undefined, {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    }),
+
+  logout: (refreshToken: string) =>
+    api.post<ApiResponse<MessageData>>('/auth/logout', undefined, {
+      headers: { Authorization: `Bearer ${refreshToken}` },
+    }),
 };
