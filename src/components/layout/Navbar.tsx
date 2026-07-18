@@ -88,7 +88,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer */}
       <Drawer anchor="right" open={mobileOpen} onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: 280, bgcolor: 'background.paper', px: 2, pt: 2 } }}
+        slotProps={{ paper: { sx: { width: 280, bgcolor: 'background.paper', px: 2, pt: 2 } } }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h6">Menu</Typography>

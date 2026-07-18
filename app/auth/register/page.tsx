@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box, Button, Container, Grid, Stack, TextField, Typography, Alert,
   InputAdornment, IconButton,
@@ -13,12 +13,26 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { authApi } from '../../../src/api/auth.api';
+import { isBackendPassword, passwordPolicy } from '../../../src/auth/password-policy';
+import { PasswordRequirements } from '../../../src/components/auth/PasswordRequirements';
+
+const nameSchema = z.string()
+  .trim()
+  .min(1, 'This field is required')
+  .max(30, 'Must not exceed 30 characters');
 
 const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name is required'),
-  lastName: z.string().min(2, 'Last name is required'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  firstName: nameSchema,
+  lastName: nameSchema,
+  email: z.string().trim().min(1, 'Email address is required').max(254, 'Email address must not exceed 254 characters').email('Please enter a valid email address'),
+  password: z.string()
+    .min(passwordPolicy.minLength, 'Password must be at least 8 characters')
+    .max(passwordPolicy.maxLength, 'Password must not exceed 64 characters')
+    .refine(isBackendPassword, 'Use uppercase, lowercase, a number, and @$!%*?&^# only.'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine(({ password, confirmPassword }) => password === confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -26,23 +40,39 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordRequirementsOpen, setPasswordRequirementsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const passwordFieldsRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    watch,
+    formState: { errors, isSubmitting, isValid },
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    defaultValues: { firstName: '', lastName: '', email: '', password: '', confirmPassword: '' },
   });
+  const password = watch('password');
+  const handlePasswordFieldsBlur = () => {
+    window.setTimeout(() => {
+      if (!passwordFieldsRef.current?.contains(document.activeElement)) {
+        setPasswordRequirementsOpen(false);
+      }
+    }, 0);
+  };
 
   const onSubmit = async (data: RegisterForm) => {
     try {
       setError(null);
-      await authApi.register(data);
+      const { confirmPassword: _confirmPassword, ...payload } = data;
+      await authApi.register(payload);
       router.push(`/auth/verify-otp?email=${encodeURIComponent(data.email)}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to register account');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to register account');
     }
   };
 
@@ -141,50 +171,94 @@ export default function RegisterPage() {
                     <TextField
                       fullWidth
                       label="First Name"
+                      required
+                      autoComplete="given-name"
                       {...register('firstName')}
                       error={!!errors.firstName}
                       helperText={errors.firstName?.message}
+                      slotProps={{ htmlInput: { maxLength: 30 } }}
                     />
                     <TextField
                       fullWidth
                       label="Last Name"
+                      required
+                      autoComplete="family-name"
                       {...register('lastName')}
                       error={!!errors.lastName}
                       helperText={errors.lastName?.message}
+                      slotProps={{ htmlInput: { maxLength: 30 } }}
                     />
                   </Stack>
 
                   <TextField
                     fullWidth
                     label="Email Address"
+                    type="email"
+                    required
+                    autoComplete="email"
                     {...register('email')}
                     error={!!errors.email}
                     helperText={errors.email?.message}
+                    slotProps={{ htmlInput: { maxLength: 254 } }}
                   />
 
-                  <TextField
-                    fullWidth
-                    label="Password"
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    error={!!errors.password}
-                    helperText={errors.password?.message}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'text.secondary' }}>
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
+                  <Box ref={passwordFieldsRef} onFocusCapture={() => setPasswordRequirementsOpen(true)} onBlurCapture={handlePasswordFieldsBlur}>
+                    <Stack spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Password"
+                        required
+                        autoComplete="new-password"
+                        type={showPassword ? 'text' : 'password'}
+                        {...register('password')}
+                        error={!!errors.password}
+                        helperText={errors.password?.message}
+                        slotProps={{
+                          htmlInput: { maxLength: passwordPolicy.maxLength },
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      />
+
+                      <PasswordRequirements password={password} visible={passwordRequirementsOpen} />
+
+                      <TextField
+                        fullWidth
+                        label="Confirm Password"
+                        required
+                        autoComplete="new-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        {...register('confirmPassword')}
+                        error={!!errors.confirmPassword}
+                        helperText={errors.confirmPassword?.message}
+                        slotProps={{
+                          htmlInput: { maxLength: passwordPolicy.maxLength },
+                          input: {
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'} onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      />
+                    </Stack>
+                  </Box>
 
                   <Button
                     type="submit"
                     variant="contained"
                     size="large"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isValid}
                     sx={{ mt: 2, py: 1.8, fontSize: '1.05rem', borderRadius: 3 }}
                   >
                     {isSubmitting ? 'Creating account...' : 'Create Account'}

@@ -96,7 +96,10 @@ export default function FeaturesSection() {
                     color: feature.color,
                   }}
                 >
-                  {React.cloneElement(feature.icon as React.ReactElement, { sx: { fontSize: 28 } })}
+                  {React.cloneElement(
+                    feature.icon as React.ReactElement<{ sx?: { fontSize: number } }>,
+                    { sx: { fontSize: 28 } },
+                  )}
                 </Box>
                 <Typography variant="h5" sx={{ mb: 1.5, fontWeight: 600 }}>
                   {feature.title}
