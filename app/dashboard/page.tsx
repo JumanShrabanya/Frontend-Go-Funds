@@ -1,51 +1,119 @@
 'use client';
 
 import React from 'react';
-import { Box, Button, Container, Typography, AppBar, Toolbar } from '@mui/material';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import { Box, Typography, Button, Container } from '@mui/material';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import DataUsageIcon from '@mui/icons-material/DataUsage';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import AddIcon from '@mui/icons-material/Add';
+import { useRouter } from 'next/navigation';
 
-import { useAuth } from '../../src/components/providers/AuthProvider';
+import StatCard from '../../src/components/dashboard/StatCard';
+import MarketTrendChart from '../../src/components/dashboard/MarketTrendChart';
+import CategoryDistributionChart from '../../src/components/dashboard/CategoryDistributionChart';
+import TopFundsTable from '../../src/components/dashboard/TopFundsTable';
 
 export default function DashboardPage() {
-  const { logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-  };
+  const router = useRouter();
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#F8FAFC' }}>
-      <AppBar position="static" elevation={0} sx={{ bgcolor: '#FFFFFF', borderBottom: '1px solid rgba(15, 23, 42, 0.08)' }}>
-        <Container maxWidth="xl">
-          <Toolbar disableGutters sx={{ justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{
-                width: 32, height: 32, borderRadius: '8px',
-                background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <TrendingUpIcon sx={{ fontSize: 18, color: '#FFFFFF' }} />
-              </Box>
-              <Typography variant="h6" sx={{ color: '#0F172A', fontWeight: 600 }}>
-                Go<span style={{ color: '#2563EB' }}>Funds</span> Dashboard
-              </Typography>
-            </Box>
-            <Button variant="outlined" color="primary" onClick={handleLogout}>
-              Logout
-            </Button>
-          </Toolbar>
-        </Container>
-      </AppBar>
+    <Container maxWidth="xl" sx={{ py: 5 }}>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5, letterSpacing: -0.5 }}>
+            Market Overview
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#64748B' }}>
+            Track broad market performance and discover top-performing categories.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => router.push('/dashboard/planner')}
+          sx={{
+            bgcolor: '#0F172A',
+            color: '#FFFFFF',
+            fontWeight: 600,
+            textTransform: 'none',
+            px: 3,
+            py: 1,
+            borderRadius: 2,
+            boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)',
+            '&:hover': {
+              bgcolor: '#1E293B',
+              boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.3)',
+            }
+          }}
+        >
+          Generate Investment Plan
+        </Button>
+      </Box>
 
-      <Container maxWidth="xl" sx={{ mt: 8 }}>
-        <Typography variant="h3" sx={{ mb: 2, color: '#0F172A' }}>
-          Welcome to your Dashboard!
-        </Typography>
-        <Typography variant="body1" sx={{ color: '#475569', maxWidth: 600 }}>
-          Your email has been successfully verified and you are now securely logged in. 
-          The full dashboard layout and AI fund recommendations will be implemented in the next phase.
-        </Typography>
-      </Container>
-    </Box>
+      {/* Stats Row */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3, mb: 4 }}>
+        <Box>
+          <StatCard 
+            title="NIFTY 50" 
+            value="23,500.20" 
+            subtitle="vs Last Month" 
+            trend="up" 
+            trendValue="+2.4%" 
+            icon={<ShowChartIcon />} 
+            color="#2563EB"
+          />
+        </Box>
+        <Box>
+          <StatCard 
+            title="Total Active Funds" 
+            value="15,420" 
+            subtitle="Tracked by AMFI" 
+            trend="neutral" 
+            trendValue="--" 
+            icon={<AccountBalanceIcon />} 
+            color="#8B5CF6"
+          />
+        </Box>
+        <Box>
+          <StatCard 
+            title="Top Sector" 
+            value="Technology" 
+            subtitle="Highest Inflow" 
+            trend="up" 
+            trendValue="+14.2%" 
+            icon={<DataUsageIcon />} 
+            color="#10B981"
+          />
+        </Box>
+        <Box>
+          <StatCard 
+            title="Avg Large Cap Return" 
+            value="18.5%" 
+            subtitle="3 Year Annualized" 
+            trend="down" 
+            trendValue="-0.5%" 
+            icon={<TimelineIcon />} 
+            color="#F59E0B"
+          />
+        </Box>
+      </Box>
+
+      {/* Charts Row */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3, mb: 4 }}>
+        <Box>
+          <MarketTrendChart />
+        </Box>
+        <Box>
+          <CategoryDistributionChart />
+        </Box>
+      </Box>
+
+      {/* Table Row */}
+      <Box>
+        <TopFundsTable />
+      </Box>
+      
+    </Container>
   );
 }
