@@ -65,10 +65,10 @@ export default function DashboardSidebar() {
               </ListItemIcon>
               <ListItemText 
                 primary={item.text} 
-                primaryTypographyProps={{ 
+                slotProps={{ primary: { 
                   fontWeight: item.active ? 600 : 500,
                   fontSize: '0.95rem'
-                }} 
+                }}} 
               />
             </ListItemButton>
           </ListItem>
@@ -83,7 +83,7 @@ export default function DashboardSidebar() {
               <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
                 <SettingsIcon />
               </ListItemIcon>
-              <ListItemText primary="Settings" primaryTypographyProps={{ fontSize: '0.95rem', fontWeight: 500 }} />
+              <ListItemText primary="Settings" slotProps={{ primary: { fontSize: '0.95rem', fontWeight: 500 } }} />
             </ListItemButton>
           </ListItem>
           <ListItem disablePadding>
@@ -91,7 +91,7 @@ export default function DashboardSidebar() {
               <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
                 <LogoutIcon />
               </ListItemIcon>
-              <ListItemText primary="Logout" primaryTypographyProps={{ fontSize: '0.95rem', fontWeight: 500 }} />
+              <ListItemText primary="Logout" slotProps={{ primary: { fontSize: '0.95rem', fontWeight: 500 } }} />
             </ListItemButton>
           </ListItem>
         </List>
