@@ -116,7 +116,7 @@ export default function PlannerPage() {
     try {
       const finalForm = { ...form };
       if (overrideValue !== undefined) {
-        finalForm[currentStep.field] = overrideValue;
+        (finalForm as Record<string, unknown>)[currentStep.field] = overrideValue;
       }
 
       const payload = {
