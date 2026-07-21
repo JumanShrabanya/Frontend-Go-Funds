@@ -13,7 +13,8 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = authSession.getAccessToken();
-    if (token) {
+    // Only set it if it hasn't been manually set (e.g. for refresh token calls)
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
@@ -56,13 +57,19 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null;
 
   try {
-    const response = await api.post('/auth/refresh', undefined, {
-      headers: { Authorization: `Bearer ${refreshToken}` },
-    });
+    // Use a clean axios instance to completely bypass interceptors
+    const response = await axios.post(
+      `${api.defaults.baseURL}/auth/refresh`,
+      undefined,
+      { headers: { Authorization: `Bearer ${refreshToken}` } }
+    );
     authSession.save(response.data.data);
     return response.data.data.accessToken;
   } catch {
     authSession.clear();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
     return null;
   }
 }
