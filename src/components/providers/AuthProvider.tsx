@@ -6,11 +6,14 @@ import { authSession } from '../../auth/auth-session';
 import api from '../../api/axios.instance';
 import { CircularProgress, Box } from '@mui/material';
 
+import type { UserProfile } from '../../types/auth.types';
+
 const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/'];
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
+  user: UserProfile | null;
   logout: () => void;
 }
 
@@ -32,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   const logout = async () => {
     const refreshToken = authSession.getRefreshToken();
@@ -46,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       authSession.clear();
       setIsAuthenticated(false);
+      setUser(null);
       router.push('/auth/login');
     }
   };
@@ -57,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (accessToken && !isTokenExpired(accessToken)) {
         setIsAuthenticated(true);
+        setUser(authSession.getUser());
         setIsLoading(false);
         // Ensure cookie is in sync
         document.cookie = "hasSession=true; path=/; max-age=604800; SameSite=Lax";
@@ -71,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           authSession.save(response.data.data);
           setIsAuthenticated(true);
+          setUser(authSession.getUser());
           setIsLoading(false);
           return;
         } catch {
@@ -79,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setIsAuthenticated(false);
+      setUser(null);
       setIsLoading(false);
     };
 
@@ -108,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, logout }}>
       {children}
     </AuthContext.Provider>
   );
