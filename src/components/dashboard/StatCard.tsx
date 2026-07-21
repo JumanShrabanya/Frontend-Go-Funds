@@ -24,7 +24,7 @@ export default function StatCard({ title, value, subtitle, trend, trendValue, ic
         boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={2}>
+      <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start' }} mb={2}>
         <Box>
           <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 600, mb: 0.5 }}>
             {title}
@@ -49,7 +49,7 @@ export default function StatCard({ title, value, subtitle, trend, trendValue, ic
         </Box>
       </Stack>
       
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack direction="row" sx={{ alignItems: 'center' }} spacing={1}>
         <Box
           sx={{
             bgcolor: trend === 'neutral' ? '#F1F5F9' : (isUp ? '#DCFCE7' : '#FEE2E2'),
