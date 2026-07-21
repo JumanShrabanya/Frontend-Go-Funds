@@ -8,13 +8,20 @@ import type {
   ResendOtpPayload,
   VerifyEmailPayload,
 } from '../types/auth.types';
+import { encryptPassword } from '../utils/crypto.util';
 
 export const authApi = {
   register: (payload: RegisterPayload) =>
-    api.post<ApiResponse<MessageData>>('/auth/register', payload),
+    api.post<ApiResponse<MessageData>>('/auth/register', {
+      ...payload,
+      password: encryptPassword(payload.password),
+    }),
 
   login: (payload: LoginPayload) =>
-    api.post<ApiResponse<AuthTokens>>('/auth/login', payload),
+    api.post<ApiResponse<AuthTokens>>('/auth/login', {
+      ...payload,
+      password: encryptPassword(payload.password),
+    }),
 
   verifyEmail: (payload: VerifyEmailPayload) =>
     api.post<ApiResponse<AuthTokens>>('/auth/verify-email', payload),
