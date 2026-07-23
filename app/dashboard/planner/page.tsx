@@ -114,9 +114,9 @@ export default function PlannerPage() {
     setIsSubmitting(true);
     setApiError(null);
     try {
-      const finalForm = { ...form };
+      const finalForm = { ...form } as any;
       if (overrideValue !== undefined) {
-        (finalForm as Record<string, unknown>)[currentStep.field] = overrideValue;
+        finalForm[currentStep.field as string] = overrideValue;
       }
 
       const payload = {

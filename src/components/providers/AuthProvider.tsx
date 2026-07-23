@@ -6,9 +6,9 @@ import { authSession } from '../../auth/auth-session';
 import api from '../../api/axios.instance';
 import { CircularProgress, Box } from '@mui/material';
 
-import type { UserProfile } from '../../types/auth.types';
+import { UserProfile } from '../../types/auth.types';
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-otp', '/auth/reset-password', '/'];
 
 interface AuthContextType {
   isAuthenticated: boolean;

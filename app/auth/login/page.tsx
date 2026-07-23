@@ -169,19 +169,23 @@ export default function LoginPage() {
                     slotProps={{
                       htmlInput: { maxLength: passwordPolicy.maxLength },
                       input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'text.secondary' }}>
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton aria-label={showPassword ? 'Hide password' : 'Show password'} onClick={() => setShowPassword(!showPassword)} edge="end" sx={{ color: 'text.secondary' }}>
+                              {showPassword ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
                       },
                     }}
                   />
 
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.main' } }}>
+                    <Typography
+                      variant="caption"
+                      onClick={() => router.push('/auth/forgot-password')}
+                      sx={{ textDecoration: 'none', color: 'text.secondary', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.main' } }}
+                    >
                       Forgot password?
                     </Typography>
                   </Box>
