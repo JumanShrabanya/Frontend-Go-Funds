@@ -50,3 +50,21 @@ export interface ApiResponse<T> {
 export interface MessageData {
   message: string;
 }
+
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface VerifyResetOtpPayload {
+  email: string;
+  otp: string;
+}
+
+export interface ResetPasswordPayload {
+  resetToken: string;
+  password: string;
+}
+
+export interface ResetTokenData {
+  resetToken: string;
+}

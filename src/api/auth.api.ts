@@ -7,6 +7,10 @@ import type {
   RegisterPayload,
   ResendOtpPayload,
   VerifyEmailPayload,
+  ForgotPasswordPayload,
+  VerifyResetOtpPayload,
+  ResetPasswordPayload,
+  ResetTokenData,
 } from '../types/auth.types';
 import { encryptPassword } from '../utils/crypto.util';
 
@@ -37,5 +41,17 @@ export const authApi = {
   logout: (refreshToken: string) =>
     api.post<ApiResponse<MessageData>>('/auth/logout', undefined, {
       headers: { Authorization: `Bearer ${refreshToken}` },
+    }),
+
+  forgotPassword: (payload: ForgotPasswordPayload) =>
+    api.post<ApiResponse<MessageData>>('/auth/forgot-password', payload),
+
+  verifyResetOtp: (payload: VerifyResetOtpPayload) =>
+    api.post<ApiResponse<ResetTokenData>>('/auth/verify-reset-otp', payload),
+
+  resetPassword: (payload: ResetPasswordPayload) =>
+    api.post<ApiResponse<MessageData>>('/auth/reset-password', {
+      ...payload,
+      password: encryptPassword(payload.password),
     }),
 };
