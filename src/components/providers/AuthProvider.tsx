@@ -15,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   user: UserProfile | null;
   logout: () => void;
+  updateUserSession: (user: UserProfile) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -52,6 +53,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(false);
       setUser(null);
       router.push('/auth/login');
+    }
+  };
+
+  const updateUserSession = (updatedUser: UserProfile) => {
+    setUser(updatedUser);
+    
+    // Also update it in authSession so it persists across refreshes
+    const tokens = {
+      accessToken: authSession.getAccessToken() || '',
+      refreshToken: authSession.getRefreshToken() || '',
+      user: updatedUser
+    };
+    if (tokens.accessToken && tokens.refreshToken) {
+      authSession.save(tokens);
     }
   };
 
@@ -116,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, logout, updateUserSession }}>
       {children}
     </AuthContext.Provider>
   );
