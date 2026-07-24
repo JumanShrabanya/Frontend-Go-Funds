@@ -54,3 +54,15 @@ export interface PlanResult {
   };
   createdAt: string;
 }
+
+export interface RiskAllocationItem {
+  name: string;
+  value: number;
+}
+
+export interface DashboardStats {
+  totalPlans: number;
+  totalMonthlyInvestment: number;
+  riskAllocation: RiskAllocationItem[];
+}
+

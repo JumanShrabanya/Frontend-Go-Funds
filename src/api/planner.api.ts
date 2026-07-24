@@ -1,5 +1,5 @@
 import api from './axios.instance';
-import { PlannerFormData, PlanResult } from '../types/planner.types';
+import { PlannerFormData, PlanResult, DashboardStats } from '../types/planner.types';
 
 export const plannerApi = {
   generatePlan: async (data: PlannerFormData): Promise<PlanResult> => {
@@ -28,6 +28,20 @@ export const plannerApi = {
     }
 
     return plan;
+  },
+
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const response = await api.get('/planner/stats');
+    return response.data.data;
+  },
+
+  getUserPlans: async (): Promise<PlanResult[]> => {
+    const response = await api.get('/planner/plans');
+    return response.data.data;
+  },
+
+  deletePlan: async (planId: string): Promise<void> => {
+    await api.delete(`/planner/plans/${planId}`);
   },
 };
 
