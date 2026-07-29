@@ -262,7 +262,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
 
             <Divider sx={{ borderColor: 'rgba(37,99,235,0.1)', my: 3 }} />
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
               {[
                 { label: 'Total Invested', value: formatCurrency(totalInvested), icon: <AccountBalanceIcon sx={{ fontSize: 16 }} />, color: '#0F172A' },
                 { label: 'Estimated Gain', value: formatCurrency(wealthGain), icon: <TrendingUpIcon sx={{ fontSize: 16 }} />, color: '#059669' },

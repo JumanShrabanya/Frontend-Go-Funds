@@ -3,7 +3,7 @@
 import React from 'react';
 import {
   Box, Container, Typography, Avatar, Button, IconButton,
-  Tabs, Tab, Divider
+  Tabs, Tab, Divider, Menu, MenuItem
 } from '@mui/material';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import { useAuth } from '../../src/components/providers/AuthProvider';
@@ -20,6 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   // Find which tab index is active based on current path
   const activeTab = navLinks.findIndex(link =>
@@ -27,6 +28,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ? pathname === '/dashboard'
       : pathname.startsWith(link.href)
   );
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
@@ -41,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           zIndex: 1200,
         }}
       >
-        <Container maxWidth="xl">
+        <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
           {/* Brand + User row */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 64 }}>
             {/* Logo */}
@@ -59,37 +68,67 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Box>
 
             {/* Right controls */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
               <IconButton sx={{ color: '#64748B' }}>
                 <NotificationsNoneIcon fontSize="small" />
               </IconButton>
               <Divider orientation="vertical" flexItem sx={{ mx: 0.5, borderColor: 'rgba(15,23,42,0.08)' }} />
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Avatar sx={{ width: 32, height: 32, bgcolor: '#DBEAFE', color: '#1D4ED8', fontSize: '0.875rem', fontWeight: 700 }}>
+              <Box
+                onClick={handleMenuOpen}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer', p: 0.5, borderRadius: 2, '&:hover': { bgcolor: '#F1F5F9' } }}
+              >
+                <Avatar sx={{ width: 34, height: 34, bgcolor: '#DBEAFE', color: '#1D4ED8', fontSize: '0.875rem', fontWeight: 700 }}>
                   {user?.firstName?.[0] || 'U'}
                 </Avatar>
                 <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                   <Typography variant="subtitle2" sx={{ color: '#0F172A', fontWeight: 600, lineHeight: 1.2, fontSize: '0.875rem' }}>
                     {user?.firstName} {user?.lastName}
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: '#94A3B8', cursor: 'pointer', '&:hover': { color: '#ef4444' } }}
-                    onClick={() => logout()}
-                  >
-                    Sign Out
+                  <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                    Account
                   </Typography>
                 </Box>
               </Box>
             </Box>
           </Box>
 
-          {/* Nav Tabs — sit flush at the bottom of the header */}
+          {/* User Popover Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            onClick={handleMenuClose}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            slotProps={{ paper: { sx: { mt: 1, minWidth: 180, borderRadius: 2, boxShadow: '0 10px 25px -5px rgba(15,23,42,0.1)' } } }}
+          >
+            <Box sx={{ px: 2, py: 1 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                {user?.firstName} {user?.lastName}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748B' }}>
+                {user?.email}
+              </Typography>
+            </Box>
+            <Divider sx={{ my: 0.5 }} />
+            <MenuItem onClick={() => logout()} sx={{ color: '#EF4444', fontWeight: 600, fontSize: '0.875rem' }}>
+              Sign Out
+            </MenuItem>
+          </Menu>
+
+          {/* Nav Tabs — scrollable on mobile */}
           <Tabs
             value={activeTab === -1 ? false : activeTab}
             onChange={(_, newVal) => router.push(navLinks[newVal].href)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             sx={{
               minHeight: 44,
+              '& .MuiTabs-scrollButtons': {
+                width: 28,
+                '&.Mui-disabled': { opacity: 0.3 },
+              },
               '& .MuiTabs-indicator': {
                 height: 2,
                 borderRadius: '2px 2px 0 0',
@@ -98,10 +137,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               '& .MuiTab-root': {
                 textTransform: 'none',
                 fontWeight: 500,
-                fontSize: '0.9rem',
+                fontSize: { xs: '0.825rem', sm: '0.9rem' },
                 color: '#64748B',
                 minHeight: 44,
-                px: 1.5,
+                px: { xs: 1.5, sm: 2 },
+                minWidth: 'auto',
                 '&.Mui-selected': { color: '#0F172A', fontWeight: 600 },
               },
             }}

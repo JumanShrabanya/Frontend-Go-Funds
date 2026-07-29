@@ -109,9 +109,9 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                 >
                   <AccordionSummary
                     expandIcon={<ExpandMore sx={{ color: '#64748B' }} />}
-                    sx={{ px: 3, py: 2, '&:hover': { bgcolor: '#F8FAFC' }, transition: 'background 0.2s' }}
+                    sx={{ px: { xs: 1.5, sm: 3 }, py: 2, '&:hover': { bgcolor: '#F8FAFC' }, transition: 'background 0.2s' }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%', flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 }, width: '100%', flexWrap: 'wrap' }}>
                       {/* Goal Icon */}
                       <Box sx={{ width: 40, height: 40, bgcolor: '#EFF6FF', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <BarChart sx={{ fontSize: 22, color: '#2563EB' }} />
@@ -138,15 +138,25 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                       </Box>
 
                       {/* Stats */}
-                      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', ml: 'auto' }}>
-                        <Box sx={{ textAlign: 'right' }}>
+                      <Box sx={{
+                        display: 'flex',
+                        gap: { xs: 2, sm: 3 },
+                        flexWrap: 'wrap',
+                        ml: { xs: 0, sm: 'auto' },
+                        width: { xs: '100%', sm: 'auto' },
+                        justifyContent: { xs: 'space-between', sm: 'flex-end' },
+                        mt: { xs: 1, sm: 0 },
+                        pt: { xs: 1, sm: 0 },
+                        borderTop: { xs: '1px solid rgba(15,23,42,0.06)', sm: 'none' },
+                      }}>
+                        <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                           <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500, display: 'block' }}>Monthly</Typography>
                           <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
                             {formatCurrency(Number(plan.monthlyAmount))}
                           </Typography>
                         </Box>
                         {allocations?.estimatedFutureValue && (
-                          <Box sx={{ textAlign: 'right' }}>
+                          <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500, display: 'block' }}>Est. Future Value</Typography>
                             <Typography sx={{ fontWeight: 700, color: '#10B981', fontSize: '0.95rem' }}>
                               {formatCurrency(allocations.estimatedFutureValue)}
@@ -154,7 +164,7 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                           </Box>
                         )}
                         {allocations?.expectedReturnRate && (
-                          <Box sx={{ textAlign: 'right' }}>
+                          <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500, display: 'block' }}>Exp. Return</Typography>
                             <Typography sx={{ fontWeight: 700, color: '#2563EB', fontSize: '0.95rem' }}>
                               {allocations.expectedReturnRate}% p.a.
@@ -168,7 +178,7 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                         <IconButton
                           size="small"
                           onClick={(e) => { e.stopPropagation(); setDeleteTargetId(plan.id); }}
-                          sx={{ ml: 1, color: '#94A3B8', '&:hover': { color: '#EF4444', bgcolor: '#FFF1F2' }, flexShrink: 0 }}
+                          sx={{ ml: { xs: 0, sm: 1 }, color: '#94A3B8', '&:hover': { color: '#EF4444', bgcolor: '#FFF1F2' }, flexShrink: 0 }}
                         >
                           <Delete fontSize="small" />
                         </IconButton>
