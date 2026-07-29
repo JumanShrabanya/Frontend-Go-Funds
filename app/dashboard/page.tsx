@@ -114,14 +114,21 @@ export default function DashboardPage() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 5 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, sm: 3, md: 4 } }}>
       {/* Header */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <Box sx={{
+        mb: 4,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        justifyContent: 'space-between',
+        alignItems: { xs: 'stretch', sm: 'flex-start' },
+        gap: { xs: 2, sm: 0 },
+      }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5, letterSpacing: -0.5 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 0.5, letterSpacing: -0.5, fontSize: { xs: '1.5rem', sm: '1.85rem', md: '2.125rem' } }}>
             My Portfolio Overview
           </Typography>
-          <Typography variant="body1" sx={{ color: '#64748B' }}>
+          <Typography variant="body1" sx={{ color: '#64748B', fontSize: { xs: '0.875rem', sm: '1rem' } }}>
             Track your active investment plans and portfolio distribution.
           </Typography>
         </Box>
@@ -132,6 +139,7 @@ export default function DashboardPage() {
           sx={{
             bgcolor: '#0F172A', color: '#FFFFFF', fontWeight: 600, textTransform: 'none',
             px: 3, py: 1.5, borderRadius: 2, boxShadow: '0 4px 6px -1px rgba(15, 23, 42, 0.2)',
+            whiteSpace: 'nowrap',
             '&:hover': { bgcolor: '#1E293B', boxShadow: '0 10px 15px -3px rgba(15, 23, 42, 0.3)' },
           }}
         >

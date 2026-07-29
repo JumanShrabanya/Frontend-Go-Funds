@@ -91,14 +91,14 @@ export default function HeroSection() {
               </MotionBox>
 
               <MotionBox initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                   <Button
                     component={Link}
                     href="/auth/register"
                     variant="contained"
                     size="large"
                     endIcon={<ArrowForwardIcon />}
-                    sx={{ px: 4, py: 1.5, fontSize: '1rem' }}
+                    sx={{ px: 4, py: 1.5, fontSize: '1rem', width: { xs: '100%', sm: 'auto' } }}
                   >
                     Start for Free
                   </Button>
@@ -107,7 +107,7 @@ export default function HeroSection() {
                     href="#how-it-works"
                     variant="outlined"
                     size="large"
-                    sx={{ px: 4, py: 1.5, fontSize: '1rem' }}
+                    sx={{ px: 4, py: 1.5, fontSize: '1rem', width: { xs: '100%', sm: 'auto' } }}
                   >
                     See How It Works
                   </Button>
