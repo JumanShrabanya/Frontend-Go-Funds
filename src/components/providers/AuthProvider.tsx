@@ -1,9 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { authSession } from '../../auth/auth-session';
-import api from '../../api/axios.instance';
+import { authSession, isTokenExpired, isTokenExpiringSoon, getTokenExpiration } from '../../auth/auth-session';
+import api, { refreshAccessToken } from '../../api/axios.instance';
 import { CircularProgress, Box } from '@mui/material';
 
 import { UserProfile } from '../../types/auth.types';
@@ -14,21 +14,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: UserProfile | null;
-  logout: () => void;
+  logout: () => Promise<void>;
+  updateUserSession: (updatedUser: UserProfile) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
-function isTokenExpired(token: string): boolean {
-  try {
-    const [, payload] = token.split('.');
-    const decoded = JSON.parse(window.atob(payload));
-    const now = Math.floor(Date.now() / 1000);
-    return decoded.exp < now;
-  } catch {
-    return true;
-  }
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,7 +27,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  const logout = async () => {
+  const updateUserSession = useCallback((updatedUser: UserProfile) => {
+    authSession.saveUser(updatedUser);
+    setUser(updatedUser);
+  }, []);
+
+  const logout = useCallback(async () => {
     const refreshToken = authSession.getRefreshToken();
     try {
       if (refreshToken) {
@@ -53,56 +48,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       router.push('/auth/login');
     }
-  };
+  }, [router]);
 
+  // Initial Auth Check
   useEffect(() => {
+    let isMounted = true;
+
     const checkAuth = async () => {
       const accessToken = authSession.getAccessToken();
       const refreshToken = authSession.getRefreshToken();
 
-      if (accessToken && !isTokenExpired(accessToken)) {
-        setIsAuthenticated(true);
-        setUser(authSession.getUser());
-        setIsLoading(false);
-        // Ensure cookie is in sync
-        document.cookie = "hasSession=true; path=/; max-age=604800; SameSite=Lax";
-        return;
-      }
-
-      // Access token is missing or expired, try to refresh
-      if (refreshToken) {
-        try {
-          const response = await api.post('/auth/refresh', undefined, {
-            headers: { Authorization: `Bearer ${refreshToken}` },
-          });
-          authSession.save(response.data.data);
+      if (accessToken && !isTokenExpiringSoon(accessToken, 60)) {
+        if (isMounted) {
           setIsAuthenticated(true);
           setUser(authSession.getUser());
           setIsLoading(false);
+          document.cookie = "hasSession=true; path=/; max-age=604800; SameSite=Lax";
+        }
+        return;
+      }
+
+      // Access token is missing, expired, or expiring within 60s -> perform silent refresh
+      if (refreshToken) {
+        const newAccessToken = await refreshAccessToken();
+        if (newAccessToken && isMounted) {
+          setIsAuthenticated(true);
+          setUser(authSession.getUser());
+          setIsLoading(false);
+          document.cookie = "hasSession=true; path=/; max-age=604800; SameSite=Lax";
           return;
-        } catch {
-          authSession.clear();
         }
       }
 
-      setIsAuthenticated(false);
-      setUser(null);
-      setIsLoading(false);
+      if (isMounted) {
+        authSession.clear();
+        setIsAuthenticated(false);
+        setUser(null);
+        setIsLoading(false);
+      }
     };
 
     checkAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, [pathname]);
 
+  // Proactive Background Auto-Refresh Timer
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const accessToken = authSession.getAccessToken();
+    if (!accessToken) return;
+
+    const exp = getTokenExpiration(accessToken);
+    if (!exp) return;
+
+    const now = Math.floor(Date.now() / 1000);
+    // Refresh 60 seconds before expiration, or immediately if < 60s remain
+    const secondsUntilRefresh = Math.max(exp - now - 60, 5);
+
+    const timerId = setTimeout(async () => {
+      const newAccessToken = await refreshAccessToken();
+      if (newAccessToken) {
+        setUser(authSession.getUser());
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+        authSession.clear();
+        router.push('/auth/login');
+      }
+    }, secondsUntilRefresh * 1000);
+
+    return () => clearTimeout(timerId);
+  }, [isAuthenticated, user, router]);
+
+  // Route Protection & Navigation Guard
   useEffect(() => {
     if (isLoading) return;
 
     const isPublicPath = publicPaths.includes(pathname);
 
-    if (isAuthenticated && isPublicPath) {
-      // Logged in user shouldn't visit login/register/otp/landing
+    if (isAuthenticated && isPublicPath && pathname !== '/') {
+      // Logged-in user shouldn't visit login/register/otp
       router.replace('/dashboard');
     } else if (!isAuthenticated && !isPublicPath) {
-      // Guest shouldn't visit private pages (like dashboard)
+      // Guest shouldn't visit private dashboard routes
       router.replace('/auth/login');
     }
   }, [isAuthenticated, pathname, isLoading, router]);
@@ -116,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, logout, updateUserSession }}>
       {children}
     </AuthContext.Provider>
   );

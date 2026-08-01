@@ -9,11 +9,55 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Attach access token to every request automatically
+// Single-flight refresh token promise to prevent race conditions during concurrent 401s
+let refreshPromise: Promise<string | null> | null = null;
+
+export async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = (async () => {
+    const refreshToken = authSession.getRefreshToken();
+    if (!refreshToken) {
+      authSession.clear();
+      return null;
+    }
+
+    try {
+      // Use clean axios instance to bypass interceptors
+      const response = await axios.post(
+        `${api.defaults.baseURL}/auth/refresh`,
+        undefined,
+        { headers: { Authorization: `Bearer ${refreshToken}` } }
+      );
+
+      const tokens = response.data?.data;
+      if (tokens?.accessToken) {
+        authSession.save(tokens);
+        return tokens.accessToken as string;
+      }
+
+      authSession.clear();
+      return null;
+    } catch {
+      authSession.clear();
+      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
+        window.location.href = '/auth/login';
+      }
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+// Request Interceptor: Attach access token automatically
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = authSession.getAccessToken();
-    // Only set it if it hasn't been manually set (e.g. for refresh token calls)
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -21,25 +65,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Unwrap the { success, data, timestamp } envelope globally
-let refreshPromise: Promise<string | null> | null = null;
-
+// Response Interceptor: Seamless 401 retry & response unwrap
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<{ message?: string | string[]; error?: string }>) => {
     const request = error.config as RetriableRequest | undefined;
     const status = error.response?.status;
     const requestUrl = request?.url ?? '';
-    const isAuthRequest = requestUrl.startsWith('/auth/');
+    const isAuthEndpoint = requestUrl.includes('/auth/login') ||
+                           requestUrl.includes('/auth/register') ||
+                           requestUrl.includes('/auth/refresh') ||
+                           requestUrl.includes('/auth/verify-otp') ||
+                           requestUrl.includes('/auth/reset-otp') ||
+                           requestUrl.includes('/auth/forgot-password');
 
-    if (status === 401 && request && !request._retry && !isAuthRequest) {
+    // Handle 401 Unauthorized seamlessly
+    if (status === 401 && request && !request._retry && !isAuthEndpoint) {
       request._retry = true;
-      refreshPromise ??= refreshAccessToken();
-      const accessToken = await refreshPromise;
-      refreshPromise = null;
 
-      if (accessToken) {
-        request.headers.Authorization = `Bearer ${accessToken}`;
+      const newAccessToken = await refreshAccessToken();
+      if (newAccessToken) {
+        request.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(request);
       }
     }
@@ -49,29 +95,7 @@ api.interceptors.response.use(
       ? responseMessage.join(' ')
       : responseMessage ?? error.response?.data?.error ?? 'An unexpected error occurred.';
     return Promise.reject(new Error(message));
-  },
-);
-
-async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = authSession.getRefreshToken();
-  if (!refreshToken) return null;
-
-  try {
-    // Use a clean axios instance to completely bypass interceptors
-    const response = await axios.post(
-      `${api.defaults.baseURL}/auth/refresh`,
-      undefined,
-      { headers: { Authorization: `Bearer ${refreshToken}` } }
-    );
-    authSession.save(response.data.data);
-    return response.data.data.accessToken;
-  } catch {
-    authSession.clear();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login';
-    }
-    return null;
   }
-}
+);
 
 export default api;
