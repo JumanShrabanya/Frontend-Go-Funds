@@ -33,26 +33,58 @@ export interface PlannerFormData {
 
 export interface FundAllocationItem {
   fundId: string;
-  fundName: string;
-  category: string;
-  percentage: number;
+  schemeCode?: string;
+  schemeName?: string;
+  fundName?: string;
+  fundHouse?: string;
+  category?: string;
+  mainCategory?: string;
+  subCategory?: string;
+  riskLevel?: string;
+  allocationPercentage?: number;
+  percentage?: number;
   monthlyAmount: number;
 }
 
 export interface PlanResult {
   id: string;
   riskProfile: string;
-  goalType: string;
-  horizon: string;
+  goal?: string;
+  goalType?: string;
+  investmentHorizon?: string;
+  horizon?: string;
   monthlyAmount: number;
-  allocations: {
-    expectedReturnRate: number;
-    estimatedFutureValue: number;
-    horizonYears: number;
-    funds: FundAllocationItem[];
-    explanation: string[];
+  monthlyInvestment?: number;
+  allocations?: {
+    expectedReturnRate?: number;
+    estimatedFutureValue?: number;
+    horizonYears?: number;
+    funds?: FundAllocationItem[];
+    explanation?: string[];
   };
-  createdAt: string;
+  allocationBreakdown?: {
+    equity?: number;
+    debt?: number;
+    hybrid?: number;
+    blendedReturnRate?: number;
+  };
+  recommendedFunds?: Array<{
+    fundId: string;
+    schemeCode?: string;
+    schemeName: string;
+    fundHouse?: string;
+    mainCategory?: string;
+    subCategory?: string;
+    riskLevel?: string;
+    allocationPercentage: number;
+    monthlyAmount: number;
+  }>;
+  totalInvested?: number;
+  projectedValue?: number;
+  projectedReturns?: number;
+  explanation?: string | string[];
+  createdAt?: string;
+  status?: string;
 }
 
 export interface RiskAllocationItem {

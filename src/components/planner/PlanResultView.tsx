@@ -76,6 +76,39 @@ function getCategoryColor(cat: string): string {
   return CATEGORY_COLORS[cat] ?? '#64748B';
 }
 
+function clampPercentage(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+}
+
+/**
+ * The API uses whole percentages (60), while older/local plan data may use
+ * fractions (0.6). Convert both shapes to one display format.
+ */
+function getFundPercentage(
+  fund: { percentage?: number; allocationPercentage?: number; monthlyAmount: number },
+  funds: Array<{ percentage?: number; allocationPercentage?: number; monthlyAmount: number }>,
+): number {
+  const raw = fund.percentage ?? fund.allocationPercentage;
+  const numeric = Number(raw);
+
+  if (Number.isFinite(numeric)) {
+    const rawPercentages = funds
+      .map((item) => Number(item.percentage ?? item.allocationPercentage))
+      .filter(Number.isFinite);
+    const usesFractionScale = rawPercentages.length > 0 && Math.max(...rawPercentages) <= 1;
+    return clampPercentage(usesFractionScale ? numeric * 100 : numeric);
+  }
+
+  const total = funds.reduce((sum, item) => sum + Math.max(0, Number(item.monthlyAmount) || 0), 0);
+  return total > 0 ? clampPercentage((Math.max(0, Number(fund.monthlyAmount) || 0) / total) * 100) : 0;
+}
+
+function formatPercentage(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
+}
+
 function formatCurrency(amount: number): string {
   if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(2)} Cr`;
   if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)} L`;
@@ -134,7 +167,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
         const row = sheet.addRow({
           name: fund.fundName,
           category: fund.category,
-          percentage: Math.round(fund.percentage * 100),
+          percentage: Math.round(getFundPercentage(fund, allocations.funds)),
           amount: fund.monthlyAmount,
         });
         
@@ -155,7 +188,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
   };
 
   // Safety guard — should never happen but prevents crash if API shape changes
-  if (!allocations || !allocations.funds) {
+  if (!allocations || !allocations.funds || allocations.funds.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography sx={{ color: '#EF4444', fontWeight: 600 }}>
@@ -173,7 +206,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
   const gainPct = totalInvested > 0 ? ((wealthGain / totalInvested) * 100).toFixed(0) : '0';
 
   return (
-    <Box sx={{ animation: 'fadeInUp 0.5s ease forwards' }}>
+      <Box sx={{ width: '100%', minWidth: 0, overflow: 'hidden', animation: 'fadeInUp 0.5s ease forwards' }}>
 
       {/* ── Hero Header ────────────────────────────── */}
       <Box
@@ -202,11 +235,11 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
         >
           <CheckCircleIcon sx={{ fontSize: 32, color: '#fff' }} />
         </Box>
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 800, fontSize: { xs: '1.4rem', md: '1.75rem' }, color: '#0F172A', lineHeight: 1.2, letterSpacing: -0.5 }}>
             Your Investment Plan is Ready
           </Typography>
-          <Typography sx={{ color: '#64748B', mt: 0.5, fontSize: '0.95rem' }}>
+          <Typography sx={{ color: '#64748B', mt: 0.5, fontSize: '0.95rem', overflowWrap: 'anywhere' }}>
             A personalised portfolio engineered around your goals and risk appetite.
           </Typography>
         </Box>
@@ -230,10 +263,10 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
       </Box>
 
       {/* ── Main 2-Column Layout ──────────────────── */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 340px' }, gap: 4, alignItems: 'start' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 340px' }, gap: 4, alignItems: 'start', minWidth: 0 }}>
 
         {/* LEFT column */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
 
           {/* ── Projection Banner ───────────────────── */}
           <Box
@@ -253,7 +286,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
             <Typography sx={{ color: '#64748B', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, mb: 2 }}>
               Projected Future Value
             </Typography>
-            <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.8rem' }, fontWeight: 800, color: '#059669', letterSpacing: -1, lineHeight: 1 }}>
+            <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.8rem' }, fontWeight: 800, color: '#059669', letterSpacing: -1, lineHeight: 1, overflowWrap: 'anywhere' }}>
               {formatCurrency(allocations.estimatedFutureValue)}
             </Typography>
             <Typography sx={{ color: '#64748B', fontSize: '0.85rem', mt: 1 }}>
@@ -299,7 +332,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {allocations.funds.map((fund, idx) => {
-                const pct = Math.round(fund.percentage * 100);
+                    const pct = getFundPercentage(fund, allocations.funds);
                 const catColor = getCategoryColor(fund.category);
                 return (
                   <Box
@@ -318,7 +351,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
                       },
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2, minWidth: 0, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                       {/* Rank badge */}
                       <Box
                         sx={{
@@ -334,7 +367,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
                         }}
                       >
                         <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: catColor }}>
-                          {pct}%
+                          {formatPercentage(pct)}
                         </Typography>
                       </Box>
 
@@ -370,8 +403,8 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
                       </Box>
 
                       {/* Monthly amount */}
-                      <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#0F172A' }}>
+                      <Box sx={{ textAlign: { xs: 'left', sm: 'right' }, flexShrink: 0, ml: { xs: 7, sm: 'auto' }, maxWidth: '100%' }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#0F172A', overflowWrap: 'anywhere' }}>
                           ₹{fund.monthlyAmount.toLocaleString('en-IN')}
                         </Typography>
                         <Typography sx={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 500 }}>/ month</Typography>
@@ -410,7 +443,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
                   }}
                 >
                   <LightbulbOutlinedIcon sx={{ color: '#F59E0B', fontSize: 20, flexShrink: 0, mt: 0.1 }} />
-                  <Typography sx={{ color: '#475569', lineHeight: 1.75, fontSize: '0.9rem' }}>
+                  <Typography sx={{ color: '#475569', lineHeight: 1.75, fontSize: '0.9rem', minWidth: 0, overflowWrap: 'anywhere' }}>
                     {line}
                   </Typography>
                 </Box>
@@ -487,7 +520,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
                       {item.icon}
                       <Typography sx={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>{item.label}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: item.color }}>
+                    <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: item.color, minWidth: 0, maxWidth: '55%', textAlign: 'right', overflowWrap: 'anywhere' }}>
                       {item.value}
                     </Typography>
                   </Box>
@@ -511,19 +544,19 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {allocations.funds.map((fund) => {
-                const pct = Math.round(fund.percentage * 100);
+                const pct = getFundPercentage(fund, allocations.funds);
                 const catColor = getCategoryColor(fund.category);
                 return (
                   <Box key={fund.fundId}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', background: catColor, flexShrink: 0 }} />
-                        <Typography sx={{ fontSize: '0.78rem', color: '#475569', fontWeight: 600 }}>
+                        <Typography sx={{ fontSize: '0.78rem', color: '#475569', fontWeight: 600, minWidth: 0, overflowWrap: 'anywhere' }}>
                           {fund.category}
                         </Typography>
                       </Box>
                       <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, color: '#0F172A' }}>
-                        {pct}%
+                        {formatPercentage(pct)}
                       </Typography>
                     </Box>
                     <Box sx={{ width: '100%', height: 5, borderRadius: 10, background: 'rgba(15,23,42,0.06)' }}>

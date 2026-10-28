@@ -4,9 +4,9 @@ import { authSession } from '../auth/auth-session';
 type RetriableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1',
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api/v1',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
+  timeout: 60000,
 });
 
 // Single-flight refresh token promise to prevent race conditions during concurrent 401s
@@ -68,7 +68,7 @@ api.interceptors.request.use((config) => {
 // Response Interceptor: Seamless 401 retry & response unwrap
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<{ message?: string | string[]; error?: string }>) => {
+  async (error: AxiosError<{ message?: string | string[]; error?: string; success?: boolean }>) => {
     const request = error.config as RetriableRequest | undefined;
     const status = error.response?.status;
     const requestUrl = request?.url ?? '';
@@ -77,7 +77,8 @@ api.interceptors.response.use(
                            requestUrl.includes('/auth/refresh') ||
                            requestUrl.includes('/auth/verify-otp') ||
                            requestUrl.includes('/auth/reset-otp') ||
-                           requestUrl.includes('/auth/forgot-password');
+                           requestUrl.includes('/auth/forgot-password') ||
+                           requestUrl.includes('/guest/');
 
     // Handle 401 Unauthorized seamlessly
     if (status === 401 && request && !request._retry && !isAuthEndpoint) {
@@ -93,7 +94,9 @@ api.interceptors.response.use(
     const responseMessage = error.response?.data?.message;
     const message = Array.isArray(responseMessage)
       ? responseMessage.join(' ')
-      : responseMessage ?? error.response?.data?.error ?? 'An unexpected error occurred.';
+      : typeof responseMessage === 'string'
+      ? responseMessage
+      : error.response?.data?.error ?? error.message ?? 'An unexpected error occurred.';
     return Promise.reject(new Error(message));
   }
 );

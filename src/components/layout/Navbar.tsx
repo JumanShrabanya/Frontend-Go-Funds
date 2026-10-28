@@ -67,6 +67,9 @@ export default function Navbar() {
                 </Button>
               ))}
               <Box sx={{ width: '1px', height: 20, bgcolor: 'divider', mx: 1 }} />
+              <Button component={Link} href="/planner/guest" variant="text" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'transparent' } }}>
+                Plan for Free
+              </Button>
               <Button component={Link} href="/auth/login" variant="text" sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'transparent' } }}>
                 Login
               </Button>

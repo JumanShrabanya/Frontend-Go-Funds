@@ -100,10 +100,18 @@ export default function DashboardPage() {
   const formatRiskName = (name: string) =>
     name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-  const chartData = displayStats?.riskAllocation?.map(item => ({
-    name: formatRiskName(item.name),
-    value: item.value,
-  })) || [];
+  // The stats endpoint returns goal breakdowns, not risk buckets. Build the
+  // chart from the normalized plans so the risk allocation always reflects the
+  // plans currently shown in the dashboard.
+  const riskCounts = displayPlans.reduce<Record<string, number>>((counts, plan) => {
+    const risk = plan.riskProfile || 'unknown';
+    counts[risk] = (counts[risk] ?? 0) + 1;
+    return counts;
+  }, {});
+  const chartData = Object.entries(riskCounts).map(([name, value]) => ({
+    name: formatRiskName(name),
+    value,
+  }));
 
   if (loading) {
     return (

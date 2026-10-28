@@ -8,7 +8,7 @@ import { CircularProgress, Box } from '@mui/material';
 
 import { UserProfile } from '../../types/auth.types';
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-otp', '/auth/reset-password', '/'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-otp', '/auth/reset-password', '/planner/guest', '/'];
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authSession.clear();
       setIsAuthenticated(false);
       setUser(null);
+      document.cookie = "hasSession=; path=/; max-age=0";
       router.push('/auth/login');
     }
   }, [router]);
@@ -128,9 +129,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    const isPublicPath = publicPaths.includes(pathname);
+    const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/planner/guest');
 
-    if (isAuthenticated && isPublicPath && pathname !== '/') {
+    if (isAuthenticated && isPublicPath && pathname !== '/' && !pathname.startsWith('/planner/guest')) {
       // Logged-in user shouldn't visit login/register/otp
       router.replace('/dashboard');
     } else if (!isAuthenticated && !isPublicPath) {

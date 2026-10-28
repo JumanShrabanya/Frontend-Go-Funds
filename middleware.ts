@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-otp', '/auth/reset-password', '/'];
+const publicPaths = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-otp', '/auth/reset-password', '/', '/planner/guest'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = request.cookies.has('hasSession');
 
-  const isPublicPath = publicPaths.includes(pathname);
+  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/planner/guest');
 
   // Redirect authenticated users away from public paths (including landing page '/') to dashboard
-  if (hasSession && isPublicPath) {
+  if (hasSession && isPublicPath && pathname !== '/planner/guest') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

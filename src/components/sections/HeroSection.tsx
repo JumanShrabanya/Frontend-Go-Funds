@@ -94,13 +94,22 @@ export default function HeroSection() {
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                   <Button
                     component={Link}
-                    href="/auth/register"
+                    href="/planner/guest"
                     variant="contained"
                     size="large"
                     endIcon={<ArrowForwardIcon />}
                     sx={{ px: 4, py: 1.5, fontSize: '1rem', width: { xs: '100%', sm: 'auto' } }}
                   >
-                    Start for Free
+                    Gnerate First Free Plan (Guest)
+                  </Button>
+                  {/* <Button
+                    component={Link}
+                    href="/auth/register"
+                    variant="outlined"
+                    size="large"
+                    sx={{ px: 4, py: 1.5, fontSize: '1rem', width: { xs: '100%', sm: 'auto' } }}
+                  >
+                    Sign Up to Save
                   </Button>
                   <Button
                     component="a"
@@ -110,7 +119,7 @@ export default function HeroSection() {
                     sx={{ px: 4, py: 1.5, fontSize: '1rem', width: { xs: '100%', sm: 'auto' } }}
                   >
                     See How It Works
-                  </Button>
+                  </Button> */}
                 </Stack>
               </MotionBox>
 
