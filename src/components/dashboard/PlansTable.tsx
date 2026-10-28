@@ -81,8 +81,11 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
 
         <AnimatePresence>
           {plans.map((plan, index) => {
-            const riskStyle = RISK_COLORS[plan.riskProfile] ?? RISK_COLORS['medium_risk'];
+            const riskKey = (plan.riskProfile || '').toLowerCase().replace(/\s+/g, '_');
+            const riskStyle = RISK_COLORS[riskKey] ?? RISK_COLORS[plan.riskProfile as keyof typeof RISK_COLORS] ?? RISK_COLORS['medium_risk'];
             const allocations = plan.allocations;
+            const funds = allocations?.funds ?? [];
+            const explanation = allocations?.explanation ?? [];
 
             return (
               <motion.div
@@ -120,7 +123,7 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                       {/* Goal & Risk */}
                       <Box sx={{ flexGrow: 1, minWidth: 140 }}>
                         <Typography sx={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>
-                          {GOAL_LABELS[plan.goalType] ?? plan.goalType}
+                          {(plan.goalType && GOAL_LABELS[plan.goalType]) || (plan.goal && GOAL_LABELS[plan.goal as keyof typeof GOAL_LABELS]) || plan.goalType || plan.goal || 'Plan'}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                           <Chip
@@ -130,7 +133,7 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                           />
                           <Chip
                             icon={<CalendarMonth sx={{ fontSize: '14px !important', color: '#64748B !important' }} />}
-                            label={HORIZON_LABELS[plan.horizon] ?? plan.horizon}
+                            label={HORIZON_LABELS[plan.horizon as keyof typeof HORIZON_LABELS] ?? HORIZON_LABELS[plan.investmentHorizon as keyof typeof HORIZON_LABELS] ?? plan.horizon ?? plan.investmentHorizon ?? ''}
                             size="small"
                             sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 500, fontSize: '0.72rem' }}
                           />
@@ -188,7 +191,7 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
 
                   <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
                     {/* Fund Allocations Table */}
-                    {allocations?.funds?.length > 0 && (
+                    {funds.length > 0 && (
                       <Box sx={{ mb: 3 }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#475569', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                           <AccountBalance sx={{ fontSize: 16 }} /> Recommended Funds
@@ -204,7 +207,7 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {allocations.funds.map((fund, i) => (
+                              {funds.map((fund, i) => (
                                 <TableRow key={i} sx={{ '&:last-child td': { border: 0 }, '&:hover': { bgcolor: '#F8FAFC' } }}>
                                   <TableCell sx={{ fontSize: '0.82rem', fontWeight: 600, color: '#0F172A', py: 1.5 }}>
                                     {fund.fundName}
@@ -236,14 +239,14 @@ export default function PlansTable({ plans, onPlanDeleted }: Props) {
                     )}
 
                     {/* Explanation */}
-                    {allocations?.explanation?.length > 0 && (
+                    {explanation.length > 0 && (
                       <Box>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#475569', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                           <TrendingUp sx={{ fontSize: 16 }} /> Strategy Insights
                         </Typography>
                         <Box sx={{ bgcolor: '#F8FAFC', borderRadius: 2, p: 2, border: '1px solid rgba(15,23,42,0.06)' }}>
-                          {allocations.explanation.map((line: string, i: number) => (
-                            <Typography key={i} variant="body2" sx={{ color: '#475569', lineHeight: 1.7, fontSize: '0.83rem', mb: i < allocations.explanation.length - 1 ? 0.5 : 0 }}>
+                          {explanation.map((line: string, i: number) => (
+                            <Typography key={i} variant="body2" sx={{ color: '#475569', lineHeight: 1.7, fontSize: '0.83rem', mb: i < explanation.length - 1 ? 0.5 : 0 }}>
                               • {line}
                             </Typography>
                           ))}

@@ -12,7 +12,7 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import DownloadIcon from '@mui/icons-material/Download';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { PlanResult } from '../../types/planner.types';
+import { FundAllocationItem, PlanResult } from '../../types/planner.types';
 
 interface PlanResultViewProps {
   result: PlanResult;
@@ -138,7 +138,11 @@ function AnimatedBar({ pct, color, delay = 0 }: { pct: number; color: string; de
 }
 
 export default function PlanResultView({ result, onReset }: PlanResultViewProps) {
-  const { riskProfile, goalType, horizon, monthlyAmount, allocations } = result;
+  const riskProfile = (result.riskProfile as string) || 'moderate';
+  const goalType = (result.goalType as string) || (result.goal as string) || '';
+  const horizon = (result.horizon as string) || (result.investmentHorizon as string) || '';
+  const monthlyAmount = (result.monthlyAmount as number) || (result.monthlyInvestment as number) || 0;
+  const allocations = result.allocations;
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownloadExcel = async () => {
@@ -163,11 +167,11 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
       headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
       // Add rows
-      allocations.funds.forEach((fund) => {
+      funds.forEach((fund) => {
         const row = sheet.addRow({
           name: fund.fundName,
           category: fund.category,
-          percentage: Math.round(getFundPercentage(fund, allocations.funds)),
+          percentage: Math.round(getFundPercentage(fund, funds)),
           amount: fund.monthlyAmount,
         });
         
@@ -188,7 +192,10 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
   };
 
   // Safety guard — should never happen but prevents crash if API shape changes
-  if (!allocations || !allocations.funds || allocations.funds.length === 0) {
+  const funds: FundAllocationItem[] = allocations?.funds ?? [];
+  const explanation = (allocations?.explanation || []) as string[];
+
+  if (funds.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography sx={{ color: '#EF4444', fontWeight: 600 }}>
@@ -201,8 +208,11 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
 
   const risk = RISK_CONFIG[riskProfile] ?? RISK_CONFIG.moderate;
 
-  const totalInvested = Number(monthlyAmount) * allocations.horizonYears * 12;
-  const wealthGain = allocations.estimatedFutureValue - totalInvested;
+  const horizonYears = allocations?.horizonYears || 7;
+  const expectedReturnRate = allocations?.expectedReturnRate || 10;
+  const estimatedFutureValue = allocations?.estimatedFutureValue || 0;
+  const totalInvested = Number(monthlyAmount) * horizonYears * 12;
+  const wealthGain = estimatedFutureValue - totalInvested;
   const gainPct = totalInvested > 0 ? ((wealthGain / totalInvested) * 100).toFixed(0) : '0';
 
   return (
@@ -287,10 +297,10 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
               Projected Future Value
             </Typography>
             <Typography sx={{ fontSize: { xs: '2.2rem', md: '2.8rem' }, fontWeight: 800, color: '#059669', letterSpacing: -1, lineHeight: 1, overflowWrap: 'anywhere' }}>
-              {formatCurrency(allocations.estimatedFutureValue)}
+              {formatCurrency(estimatedFutureValue)}
             </Typography>
             <Typography sx={{ color: '#64748B', fontSize: '0.85rem', mt: 1 }}>
-              Over <strong style={{ color: '#0F172A' }}>{allocations.horizonYears} years</strong> at <strong style={{ color: '#0F172A' }}>{allocations.expectedReturnRate}% p.a.</strong> blended return
+              Over <strong style={{ color: '#0F172A' }}>{horizonYears} years</strong> at <strong style={{ color: '#0F172A' }}>{expectedReturnRate}% p.a.</strong> blended return
             </Typography>
 
             <Divider sx={{ borderColor: 'rgba(37,99,235,0.1)', my: 3 }} />
@@ -324,16 +334,16 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
                 Recommended Portfolio
               </Typography>
               <Chip
-                label={`${allocations.funds.length} Funds`}
+                label={`${funds.length} Funds`}
                 size="small"
                 sx={{ background: '#EFF6FF', color: '#2563EB', fontWeight: 700, fontSize: '0.7rem', border: '1px solid #BFDBFE' }}
               />
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {allocations.funds.map((fund, idx) => {
-                    const pct = getFundPercentage(fund, allocations.funds);
-                const catColor = getCategoryColor(fund.category);
+              {funds.map((fund: any, idx: number) => {
+                    const pct = getFundPercentage(fund, funds);
+                const catColor = getCategoryColor(fund.category ?? 'Other');
                 return (
                   <Box
                     key={fund.fundId}
@@ -428,7 +438,7 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {allocations.explanation.map((line, i) => (
+              {explanation.map((line, i) => (
                 <Box
                   key={i}
                   sx={{
@@ -543,9 +553,9 @@ export default function PlanResultView({ result, onReset }: PlanResultViewProps)
               Allocation Breakdown
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {allocations.funds.map((fund) => {
-                const pct = getFundPercentage(fund, allocations.funds);
-                const catColor = getCategoryColor(fund.category);
+              {funds.map((fund) => {
+                const pct = getFundPercentage(fund, funds);
+                const catColor = getCategoryColor(fund.category ?? 'Other');
                 return (
                   <Box key={fund.fundId}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
